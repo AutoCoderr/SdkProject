@@ -8,13 +8,6 @@ services:
       - ./oauth-server:/var/www/html
     ports:
       - 7070:80
-  oauth-server-facebook:
-    image: php:apache
-    working_dir: /var/www/html
-    volumes:
-      - ./oauth-server-facebook:/var/www/html
-    ports:
-      - 7069:80
   oauth-client:
     image: php:apache
     working_dir: /var/www/html
