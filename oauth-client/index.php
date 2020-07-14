@@ -1,62 +1,27 @@
 <?php
-$LOCAL_URL = "http://localhost:7071";
+include "OauthServer.php";
+include "GitlabServer.php";
+include "FacebookServer.php";
 $SERVERS = [
-    [
-        'CLIENT_ID' => "client_5edfd43b0db573.88203718",
-        'CLIENT_SECRET' => "e0a6a1f5c55fafd48cbcce2b7279d4029fad76f4",
-        'STATE' => "DEAZFAEF321432DAEAFD3E13223R",
-        'DISTANT_URL' => "http://localhost:7070",
-        'NAME' => 'OauthServer'
-    ],
-    [
-        'CLIENT_ID' => "client_5edfd43b0db573.88203718",
-        'CLIENT_SECRET' => "e0a6a1f5c55fafd48cbcce2b7279d4029fad76f4",
-        'STATE' => "DEAZFAEF321432DAEAFD3E13223R",
-        'DISTANT_URL' => "http://localhost:7069",
-        'NAME' => 'Facebook'
-    ]
+    OauthServer::class,
+    GitlabServer::class,
+    FacebookServer::class
 ];
 
 function home()
 {
     global $SERVERS;
-    global $LOCAL_URL;
 
-    foreach ($SERVERS as $server) {
-        $link = "{$server['DISTANT_URL']}/auth?response_type=code&client_id={$server['CLIENT_ID']}&state={$server['STATE']}&scope=email&redirect_uri={$LOCAL_URL}/success";
-        echo "<a href=\"{$link}\">Se connecter via {$server['NAME']}</a><br/>";
+    foreach ($SERVERS as $serverClass) {
+        $server = new $serverClass;
+        $server->displayLink();
     }
 }
 
 function callback()
 {
-    global $STATE;
-    global $CLIENT_ID;
-    global $CLIENT_SECRET;
-    ['code' => $code, 'state' => $rstate] = $_GET;
-
-    // Check state origin
-    if ($STATE === $rstate) {
-        // Get access token
-        $link = "http://oauth-server/token?grant_type=authorization_code&code={$code}&client_id={$CLIENT_ID}&client_secret={$CLIENT_SECRET}";
-        ['token' => $token] = json_decode(file_get_contents($link), true);
-
-        // Get user data
-        $link = "http://oauth-server/me";
-        $rs = curl_init($link);
-        curl_setopt_array($rs, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_HEADER => 0,
-            CURLOPT_HTTPHEADER => [
-                "Authorization: Bearer {$token}"
-            ]
-        ]);
-        echo curl_exec($rs);
-        curl_close($rs);
-    } else {
-        http_response_code(400);
-        echo "Invalid state";
-    }
+    $provider = new $_GET['state']();
+    $provider->getInfosClient();
 }
 
 // Router
